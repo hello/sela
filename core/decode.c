@@ -7,7 +7,7 @@
 #include "lpc.h"
 #include "wavutils.h"
 #include "apev2.h"
-#define BLOCK_SIZE 120
+#define BLOCK_SIZE 240
 
 int main(int argc,char **argv)
 {

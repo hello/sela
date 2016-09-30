@@ -13,7 +13,7 @@
 #include "apev2.h"
 
 #define SHORT_MAX 32767
-#define BLOCK_SIZE 120
+#define BLOCK_SIZE 240
 
 int main(int argc,char **argv)
 {
