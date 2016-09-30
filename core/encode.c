@@ -13,7 +13,7 @@
 #include "apev2.h"
 
 #define SHORT_MAX 32767
-#define BLOCK_SIZE 512
+#define BLOCK_SIZE 120
 
 int main(int argc,char **argv)
 {
@@ -235,7 +235,7 @@ int main(int argc,char **argv)
 			req_bits_ref = rice_encode_block(rice_param_ref,unsigned_ref,
 				opt_lpc_order,encoded_ref);
 			//Determine number of ints required for storage
-			req_int_ref = ceil((float)(req_bits_ref)/(32));
+			req_int_ref = (req_bits_ref+31)/(32);
 
 			//Dequantize reflection
 			dqtz_ref_cof(qtz_ref_coeffs,opt_lpc_order,ref);

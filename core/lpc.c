@@ -14,8 +14,9 @@ lookup_1st_order_coeffs[128] =
 int32_t check_if_constant(const int16_t *data,int32_t num_elements)
 {
 	int16_t temp = data[0];
+	int i;
 
-	for(int32_t i = 1; i < num_elements; i++)
+	for( i = 1; i < num_elements; i++)
 	{
 		if(temp != data[i])
 			return -1;
@@ -135,7 +136,7 @@ uint8_t compute_ref_coefs(int32_t *autoc,uint8_t max_order,int32_t *ref)
 	return(order_est);
 }
 
-static uint32_t fastsqrt( uint32_t x ) {
+static int32_t fastsqrt( int32_t x ) {
     int64_t s = x;
     x = 20000u;
     x = ( x + s / x )/2;
@@ -148,10 +149,11 @@ static uint32_t fastsqrt( uint32_t x ) {
 /*Quantize reflection coeffs*/
 int32_t qtz_ref_cof(int32_t *par,uint8_t ord,int32_t *q_ref)
 {
-	for(int32_t i = 0; i < ord; i++)
+	int i;
+	for( i = 0; i < ord; i++)
 	{
 		if(i == 0)
-			q_ref[i] = ((-1*(1<<15) + (SQRT2 * fastsqrt(par[i]  + 1))>>15))>>9;
+			q_ref[i] = (( ((SQRT2 * fastsqrt(par[i]  + 1)) >> 15) - (1<<15) )) >> 9;
 	}
 
 	return(0);
@@ -160,8 +162,7 @@ int32_t qtz_ref_cof(int32_t *par,uint8_t ord,int32_t *q_ref)
 /*Dequantize reflection coefficients*/
 int32_t dqtz_ref_cof(const int32_t *q_ref,uint8_t ord,int32_t *ref)
 {
-	int32_t spar[MAX_LPC_ORDER];
-	float temp;
+	int i;
 
 	if(ord <= 1)
 	{
@@ -169,7 +170,7 @@ int32_t dqtz_ref_cof(const int32_t *q_ref,uint8_t ord,int32_t *ref)
 		return(0);
 	}
 
-	for(int32_t i = 0; i < ord; i++)
+	for( i = 0; i < ord; i++)
 	{
 		if(i == 0)
 			ref[i] = lookup_1st_order_coeffs[q_ref[i] + 64];
