@@ -14,7 +14,7 @@ int main(int argc,char **argv)
 	
 	if(argc < 3)
 	{
-		fprintf(stderr,"Usage\n%s input.sela output.wav\n",argv[0]);
+		fprintf(stderr,"Usage\n%s input.hlo output.wav\n",argv[0]);
 		return -1;
 	}
 
@@ -24,10 +24,10 @@ int main(int argc,char **argv)
 	fprintf(stderr, "Output : %s\n",argv[2]);
 
 	char magic_number[4];
-	size_t read_bytes = fread(magic_number,sizeof(char),4,infile);
-	if(strncmp(magic_number,"SeLa",4))
+	size_t read_bytes = fread(magic_number,sizeof(char),5,infile);
+	if(strncmp(magic_number,"hello",5))
 	{
-		fprintf(stderr,"Not a sela file.\n");
+		fprintf(stderr,"Not a hello file.\n");
 		fclose(infile);
 		fclose(outfile);
 		return -1;

@@ -19,7 +19,7 @@ int main(int argc,char **argv)
 {
 	if(argc < 3)
 	{
-		fprintf(stderr,"Usage : %s <input.wav> <output.sela>\n",argv[0]);
+		fprintf(stderr,"Usage : %s <input.wav> <output.hlo>\n",argv[0]);
 		fprintf(stderr,"Supports Redbook CD quality (16 bits/sample) WAVEform audio(*.wav) files only.\n");
 		return -1;
 	}
@@ -48,7 +48,7 @@ int main(int argc,char **argv)
 	uint8_t opt_lpc_order = 0;
 	int16_t channels,bps;
 	uint8_t rice_param_ref,rice_param_residue;
-	const char magic_number[4] = {'S','e','L','a' };
+	const char magic_number[5] = "hello";
 	uint16_t req_int_ref,req_int_residues,samples_per_channel;
 	const int16_t Q = 35;
 	int32_t i,j,k = 0;

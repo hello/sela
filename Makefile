@@ -13,10 +13,10 @@ expt_enc: core/encode_expt.c core/rice.c core/lpc.c core/wavutils.c
 	$(CC) $(INCDIR) core/encode_expt.c core/rice.c core/lpc.c core/wavutils.c -o expt_encode $(CFLAGS) $(LINKFLAGS)
 
 encoder: encode.o rice.o lpc.o wavutils.o apev2.o
-	$(CC) $(INCDIR) encode.o rice.o lpc.o wavutils.o apev2.o -o selaenc $(LINKFLAGS)
+	$(CC) $(INCDIR) encode.o rice.o lpc.o wavutils.o apev2.o -o hloenc $(LINKFLAGS)
 
 decoder: decode.o rice.o lpc.o wavutils.o apev2.o
-	$(CC) $(INCDIR) decode.o rice.o lpc.o wavutils.o apev2.o -o seladec $(LINKFLAGS)
+	$(CC) $(INCDIR) decode.o rice.o lpc.o wavutils.o apev2.o -o hlodec $(LINKFLAGS)
 
 selaplay_pulse: p_selaplay.o rice.o lpc.o packetqueue.o pulse_output.o apev2.o wavutils.o
 	$(CC) $(INCDIR) -o selaplay selaplay.o rice.o lpc.o packetqueue.o pulse_output.o apev2.o wavutils.o -lm -lpthread -lpulse-simple -lpulse
