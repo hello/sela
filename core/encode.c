@@ -13,14 +13,10 @@
 #include "apev2.h"
 
 #define SHORT_MAX 32767
-#define BLOCK_SIZE 2048
+#define BLOCK_SIZE 512
 
 int main(int argc,char **argv)
 {
-	fprintf(stderr,"SimplE Lossless Audio Encoder\n");
-	fprintf(stderr,"Copyright (c) 2015-2016. Ratul Saha\n");
-	fprintf(stderr,"Released under MIT license\n\n");
-
 	if(argc < 3)
 	{
 		fprintf(stderr,"Usage : %s <input.wav> <output.sela>\n",argv[0]);
@@ -78,10 +74,10 @@ int main(int argc,char **argv)
 	uint32_t encoded_residues[BLOCK_SIZE];
 	int64_t lpc[MAX_LPC_ORDER + 1];
 	size_t written;
-	double qtz_samples[BLOCK_SIZE];
-	double autocorr[MAX_LPC_ORDER + 1];
-	double ref[MAX_LPC_ORDER];
-	double lpc_mat[MAX_LPC_ORDER][MAX_LPC_ORDER];
+	int32_t qtz_samples[BLOCK_SIZE];
+	int32_t autocorr[MAX_LPC_ORDER + 1];
+	int32_t ref[MAX_LPC_ORDER];
+	int32_t lpc_mat[MAX_LPC_ORDER][MAX_LPC_ORDER];
 	
 	//Metadata data structures
 	wav_tags tags;
@@ -194,16 +190,7 @@ int main(int argc,char **argv)
 	written = fwrite(&sample_rate,sizeof(int32_t),1,outfile);
 	written = fwrite(&bps,sizeof(int16_t),1,outfile);
 	written = fwrite((int8_t *)&channels,sizeof(int8_t),1,outfile);
-	written = fwrite(&estimated_frames,sizeof(int32_t),1,outfile);
-
-	if(is_wav == READ_STATUS_OK_WITH_META)
-	{
-		//Write metadata info to output
-		written = fwrite(&metadata_sync,sizeof(int32_t),1,outfile);//Metadata syncwd
-		metadata_size = header.tag_size + 32;
-		fwrite(&metadata_size,sizeof(int32_t),1,outfile);
-		write_apev2_tags(&state,outfile,ftell(outfile),&header,&ape_list);
-	}
+    written = fwrite(&estimated_frames,sizeof(int32_t),1,outfile);
 
 	//Define read size
 	read_size = channels * BLOCK_SIZE;
@@ -224,43 +211,38 @@ int main(int argc,char **argv)
 
 		for(i = 0; i < channels; i++)
 		{
+        
 			//Separate channels
 			for(j = 0; j < samples_per_channel; j++)
 				short_samples[j] = buffer[channels * j + i];
-
 			//Quantize sample data
 			for(j = 0; j < samples_per_channel; j++)
-				qtz_samples[j] = ((double)short_samples[j])/SHORT_MAX;
-
+				qtz_samples[j] = (short_samples[j]<<15);
 			//Calculate autocorrelation data
 			auto_corr_fun(qtz_samples,samples_per_channel,MAX_LPC_ORDER,1,
 				autocorr);
-
 			//Calculate reflection coefficients
 			opt_lpc_order = compute_ref_coefs(autocorr,MAX_LPC_ORDER,ref);
-
 			//Quantize reflection coefficients
 			qtz_ref_cof(ref,opt_lpc_order,qtz_ref_coeffs);
-
 			//signed to unsigned
 			signed_to_unsigned(opt_lpc_order,qtz_ref_coeffs,unsigned_ref);
 
 			//get optimum rice param and number of bits
 			rice_param_ref = get_opt_rice_param(unsigned_ref,opt_lpc_order,
 				&req_bits_ref);
-
 			//Encode ref coeffs
 			req_bits_ref = rice_encode_block(rice_param_ref,unsigned_ref,
 				opt_lpc_order,encoded_ref);
-
 			//Determine number of ints required for storage
-			req_int_ref = ceil((double)(req_bits_ref)/(32));
+			req_int_ref = ceil((float)(req_bits_ref)/(32));
 
 			//Dequantize reflection
 			dqtz_ref_cof(qtz_ref_coeffs,opt_lpc_order,ref);
 
 			//Reflection to lpc
 			levinson(NULL,opt_lpc_order,ref,lpc_mat);
+            
 			lpc[0] = 0;
 			for(j = 0; j < opt_lpc_order; j++)
 				lpc[j + 1] = corr * lpc_mat[opt_lpc_order - 1][j];
@@ -288,10 +270,10 @@ int main(int argc,char **argv)
 				samples_per_channel,encoded_residues);
 
 			//Determine nunber of ints required for storage
-			req_int_residues = ceil((double)(req_bits_residues)/(32));
+			req_int_residues = ceil((float)(req_bits_residues)/(32));
 
 			//Write channel number to output
-			written = fwrite((char *)&i,sizeof(char),1,outfile);
+			//written = fwrite((char *)&i,sizeof(char),1,outfile);
 
 			//Write rice_params,bytes,encoded lpc_coeffs to output
 			written = fwrite(&rice_param_ref,sizeof(uint8_t),1,outfile);
@@ -302,9 +284,10 @@ int main(int argc,char **argv)
 			//Write rice_params,bytes,encoded residues to output
 			written = fwrite(&rice_param_residue,sizeof(uint8_t),1,outfile);
 			written = fwrite(&req_int_residues,sizeof(uint16_t),1,outfile);
-			written = fwrite(&samples_per_channel,sizeof(uint16_t),1,outfile);
+			//written = fwrite(&samples_per_channel,sizeof(uint16_t),1,outfile);
 			written = fwrite(encoded_residues,sizeof(uint32_t),req_int_residues,
 				outfile);
+            
 		}
 
 		//Percentage bar print

@@ -7,13 +7,10 @@
 #include "lpc.h"
 #include "wavutils.h"
 #include "apev2.h"
-#define BLOCK_SIZE 2048
+#define BLOCK_SIZE 512
 
 int main(int argc,char **argv)
 {
-	fprintf(stderr,"SimplE Lossless Audio Decoder\n");
-	fprintf(stderr,"Copyright (c) 2015-2016. Ratul Saha\n");
-	fprintf(stderr,"Released under MIT license\n\n");
 	
 	if(argc < 3)
 	{
@@ -60,8 +57,8 @@ int main(int argc,char **argv)
 	uint32_t compressed_residues[BLOCK_SIZE];
 	uint32_t decomp_ref[MAX_LPC_ORDER];
 	uint32_t decomp_residues[BLOCK_SIZE];
-	double ref[MAX_LPC_ORDER];
-	double lpc_mat[MAX_LPC_ORDER][MAX_LPC_ORDER];
+	int32_t ref[MAX_LPC_ORDER];
+	int32_t lpc_mat[MAX_LPC_ORDER][MAX_LPC_ORDER];
 	
 	//Metadata structures
 	apev2_state read_state;
@@ -86,19 +83,6 @@ int main(int argc,char **argv)
 	read = fread(&bps,sizeof(int16_t),1,infile);
 	read = fread(&channels,sizeof(int8_t),1,infile);
 	read = fread(&estimated_frames,sizeof(uint32_t),1,infile);
-
-	//Read metadata if present
-	read = fread(&temp,sizeof(int32_t),1,infile);
-	if(temp == metadata_sync)
-	{
-		meta_present = 1;
-		fread(&temp,sizeof(int32_t),1,infile);
-		char *metadata = (char *)malloc(sizeof(char) * temp);
-		fread(metadata,sizeof(char),(size_t)temp,infile);
-		read_apev2_tags(&read_state,metadata,temp,&keys_inst,&read_header,&ape_read_list);
-	}
-	else
-		fseek(infile,-4,SEEK_CUR);//No tags. Rewind 4 bytes
 
 	fprintf(stderr,"\nStream Information\n");
 	fprintf(stderr,"------------------\n");
@@ -136,7 +120,8 @@ int main(int argc,char **argv)
 			for(i = 0; i < channels; i++)
 			{
 				//Read channel number
-				read = fread(&curr_channel,sizeof(uint8_t),1,infile);
+				//read = fread(&curr_channel,sizeof(uint8_t),1,infile);
+                curr_channel = 0;
 
 				//Read rice_param,lpc_order,encoded lpc_coeffs from input
 				read = fread(&rice_param_ref,sizeof(uint8_t),1,infile);
@@ -147,7 +132,10 @@ int main(int argc,char **argv)
 				//Read rice_param,num_of_residues,encoded residues from input
 				read = fread(&rice_param_residue,sizeof(uint8_t),1,infile);
 				read = fread(&num_residue_elements,sizeof(uint16_t),1,infile);
-				read = fread(&samples_per_channel,sizeof(uint16_t),1,infile);
+                
+                //read = fread(&samples_per_channel,sizeof(uint16_t),1,infile);
+                samples_per_channel = BLOCK_SIZE;
+                
 				read = fread(compressed_residues,sizeof(uint32_t),num_residue_elements,infile);
 
 				//Decode compressed reflection coefficients and residues
