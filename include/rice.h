@@ -1,7 +1,7 @@
 #ifndef _RICE_H_
 #define _RICE_H_
 
-#define MAX_RICE_PARAM 20
+#define MAX_RICE_PARAM 12
 
 typedef struct rice_encode_context
 {

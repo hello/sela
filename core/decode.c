@@ -35,7 +35,7 @@ int main(int argc,char **argv)
 
 	//Variables
 	int8_t percent = 0;
-	uint8_t channels,curr_channel,rice_param_ref,rice_param_residue,opt_lpc_order;
+	uint8_t channels,curr_channel,rice_param_ref,rice_param_residue;
 	int16_t bps,meta_present = 0;
 	const int16_t Q = 35;
 	uint16_t num_ref_elements,num_residue_elements,samples_per_channel = 0;
@@ -49,16 +49,10 @@ int main(int argc,char **argv)
 	size_t read,written;
 
 	//Arrays
-	int32_t s_ref[MAX_LPC_ORDER];
 	int32_t s_residues[BLOCK_SIZE];
 	int32_t rcv_samples[BLOCK_SIZE];
-	int64_t lpc[MAX_LPC_ORDER + 1];
-	uint32_t compressed_ref[MAX_LPC_ORDER];
 	uint32_t compressed_residues[BLOCK_SIZE];
-	uint32_t decomp_ref[MAX_LPC_ORDER];
 	uint32_t decomp_residues[BLOCK_SIZE];
-	int32_t ref[MAX_LPC_ORDER];
-	int32_t lpc_mat[MAX_LPC_ORDER][MAX_LPC_ORDER];
 	
 	//Metadata structures
 	apev2_state read_state;
@@ -123,47 +117,23 @@ int main(int argc,char **argv)
 				//read = fread(&curr_channel,sizeof(uint8_t),1,infile);
                 curr_channel = 0;
 
-				//Read rice_param,lpc_order,encoded lpc_coeffs from input
-				read = fread(&rice_param_ref,sizeof(uint8_t),1,infile);
-				read = fread(&num_ref_elements,sizeof(uint16_t),1,infile);
-				read = fread(&opt_lpc_order,sizeof(uint8_t),1,infile);
-				read = fread(compressed_ref,sizeof(uint32_t),num_ref_elements,infile);
-
 				//Read rice_param,num_of_residues,encoded residues from input
 				read = fread(&rice_param_residue,sizeof(uint8_t),1,infile);
 				read = fread(&num_residue_elements,sizeof(uint16_t),1,infile);
                 
-                //read = fread(&samples_per_channel,sizeof(uint16_t),1,infile);
                 samples_per_channel = BLOCK_SIZE;
                 
 				read = fread(compressed_residues,sizeof(uint32_t),num_residue_elements,infile);
 
 				//Decode compressed reflection coefficients and residues
-				rice_decode_block(rice_param_ref,compressed_ref,opt_lpc_order,decomp_ref);
 				rice_decode_block(rice_param_residue,compressed_residues,samples_per_channel,decomp_residues);
 
 				//unsigned to signed
-				unsigned_to_signed(opt_lpc_order,decomp_ref,s_ref);
 				unsigned_to_signed(samples_per_channel,decomp_residues,s_residues);
-
-				//Dequantize reflection coefficients
-				dqtz_ref_cof(s_ref,opt_lpc_order,ref);
-
-				//Generate lpc coefficients
-				levinson(NULL,opt_lpc_order,ref,lpc_mat);
-				lpc[0] = 0;
-				for(int32_t k = 0; k < opt_lpc_order; k++)
-					lpc[k + 1] = (int64_t)(corr * lpc_mat[opt_lpc_order - 1][k]);
-
-				for(int32_t k = opt_lpc_order; k < MAX_LPC_ORDER; k++)
-					lpc[k + 1] = 0;
-
-				//lossless reconstruction
-				calc_signal(s_residues,samples_per_channel,opt_lpc_order,Q,lpc,rcv_samples);
 
 				//Combine samples from all channels
 				for(int32_t k = 0; k < samples_per_channel; k++)
-					buffer[channels * k + i] = (int16_t)rcv_samples[k];
+					buffer[channels * k + i] = (int16_t)s_residues[k];
 			}
 			written = fwrite(buffer,sizeof(int16_t),(samples_per_channel * channels),outfile);
 			temp = 0;

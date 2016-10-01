@@ -4,6 +4,7 @@
 
 #include "rice.h"
 
+
 /*
 *Golomb-Rice algorithm is optimized to work with unsigned numbers
 *This function maps all positive numbers to even postive numbers
